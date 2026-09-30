@@ -35,6 +35,7 @@
 | `--format nix`（尽力而为的打印器） | ✅（path 会变成字符串，函数会被拒绝） |
 | `--arg` / `--argstr` 顶层变量绑定 | ✅ |
 | 本地文件 I/O：`import`、`readFile`、`readDir`、`pathExists`、`getEnv` …（`--io local`） | ✅ |
+| REPL：友好模式（`nix repl` 风格绑定、`:命令`）与智能体模式（Lix ENQ、JSONL） | ✅ |
 | `derivation`、`fetchurl`、`writeFile`、`storePath`、`storeDir`、`toFile` … | ❌ 拒绝（`TSNIX-NO-STORE`） |
 
 完整列表见 `tsnix schema`。
@@ -56,8 +57,10 @@ $ ./target/release/tsnix --help
 ```console
 $ nix build                 # 本机二进制
 $ nix build .#static        # 面向嵌入式目标的静态 musl 二进制
+$ nix build .#docs          # 中英双语文档站（mdBook）
+$ nix build .#wasm          # wasm32-wasip1 构建（实验性）
 $ nix run . -- eval -e '1 + 1'
-$ nix develop               # 带固定工具链的开发 shell
+$ nix develop               # 带工具链、git hooks 与 mdBook 的开发 shell
 ```
 
 ## 用法
@@ -90,6 +93,16 @@ $ echo '{ a = 1; }' | tsnix eval -
 
 # 只校验不求值
 $ tsnix check -f config.nix
+
+# 交互式 REPL（绑定、:命令、历史）
+$ tsnix repl
+tsnix> x = 21;
+tsnix> x * 2
+42
+
+# 面向智能体的 REPL：Lix repl-automation（ENQ 就绪）或 JSON 行协议
+$ printf '1 + 1\n:quit\n' | tsnix repl --agent
+$ tsnix repl --protocol json
 
 # 机器可读契约
 $ tsnix schema --pretty

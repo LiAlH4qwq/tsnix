@@ -2,134 +2,95 @@
   description = "tsnix — a minimal, embeddable Nix-language evaluator built solely on snix-eval (no store)";
 
   inputs = {
-    # If the GitHub API is rate-limited (unauthenticated shared IPs), override
-    # the inputs, e.g.:
-    #   nix build .#tsnix \
-    #     --override-input nixpkgs path:/path/to/nixpkgs \
-    #     --override-input rust-overlay \
-    #       https://codeload.github.com/oxalica/rust-overlay/tar.gz/refs/heads/master
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    systems.url = "github:nix-systems/default";
+
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # mdBook theme used by the documentation site (`flake = false`: it is an
+    # asset tree, not a flake).
+    mdbook-theme-milieuim = {
+      url = "github:milieuim/mdbook-theme-milieuim";
+      flake = false;
+    };
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      rust-overlay,
-    }:
-    let
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
-      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      { config, withSystem, ... }:
+      {
+        systems = import inputs.systems;
 
-      # NAR hash of the pinned snix-eval git source (see Cargo.toml). Both the
-      # `snix-eval` crate and its in-repo `snix-eval-builtin-macros` path
-      # dependency come from the same checkout, so they share a hash.
-      #
-      # To refresh after bumping the revision in Cargo.toml:
-      #   nix build .#tsnix 2>&1 | grep 'got:'
-      snixSourceHash = "sha256-TxtwwKnNdRXHdf4kr4c62R2jkTwgXlOiHfJiRmn0o24=";
+        imports = [
+          # Development tooling (git hooks, generated GitHub Actions) lives in
+          # the `dev` partition so it never reaches a consumer's lock file.
+          inputs.flake-parts.flakeModules.partitions
+          ./nix/docs.nix
+          ./nix/wasm.nix
+        ];
 
-      # Shared derivation arguments for a given nixpkgs/rustPlatform.
-      mkTsnix =
-        pkgs:
-        let
-          src = pkgs.lib.cleanSourceWith {
-            src = ./.;
-            filter =
-              path: _type:
-              !(builtins.elem (baseNameOf (toString path)) [
-                "target"
-                "result"
-                ".direnv"
-                ".git"
-              ]);
-          };
-        in
-        pkgs.rustPlatform.buildRustPackage {
-          pname = "tsnix";
-          version = "0.1.0";
-          inherit src;
-          cargoLock = {
-            lockFile = ./Cargo.lock;
-            outputHashes = {
-              "snix-eval-0.1.0" = snixSourceHash;
-              "snix-eval-builtin-macros-0.0.1" = snixSourceHash;
+        partitionedAttrs = {
+          devShells = "dev";
+          apps = "dev";
+          checks = "dev";
+        };
+
+        partitions.dev = {
+          extraInputsFlake = ./dev;
+          module.imports = [ ./dev/flake-module.nix ];
+        };
+
+        perSystem =
+          { system, config, ... }:
+          let
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [ (import inputs.rust-overlay) ];
             };
+
+            # NAR hash of the pinned snix-eval git source (see Cargo.toml). Both
+            # `snix-eval` and its in-repo `snix-eval-builtin-macros` path
+            # dependency come from the same checkout, so they share a hash.
+            #
+            # To refresh after bumping the revision in Cargo.toml:
+            #   nix build .#tsnix 2>&1 | grep 'got:'
+            inherit (import ./nix/constants.nix) snixSourceHash;
+
+            tsnix = pkgs.callPackage ./nix/package.nix { inherit snixSourceHash; };
+          in
+          {
+            _module.args.pkgs = pkgs;
+
+            packages.tsnix = tsnix;
+            packages.default = config.packages.tsnix;
+            # Static musl build for embedded targets.
+            packages.static = pkgs.pkgsStatic.callPackage ./nix/package.nix {
+              inherit snixSourceHash;
+            };
+
+            apps.default = {
+              type = "app";
+              program = "${config.packages.tsnix}/bin/tsnix";
+            };
+
+            formatter = pkgs.nixfmt;
           };
-          meta = {
-            description = "A minimal, embeddable Nix-language evaluator built solely on snix-eval (no store)";
-            homepage = "https://git.snix.dev/snix/snix";
-            license = pkgs.lib.licenses.gpl3Only;
-            mainProgram = "tsnix";
-            platforms = pkgs.lib.platforms.unix;
-          };
+
+        flake.overlays.tsnix = final: _prev: {
+          tsnix = withSystem final.stdenv.hostPlatform.system (ps: ps.config.packages.tsnix);
         };
-    in
-    {
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ (import rust-overlay) ];
-          };
-          tsnix = mkTsnix pkgs;
-        in
-        {
-          default = tsnix;
-          tsnix = tsnix;
-          # Static musl build for embedded targets on the host's architecture.
-          static = mkTsnix pkgs.pkgsStatic;
-        }
-      );
 
-      apps = forAllSystems (system: {
-        default = {
-          type = "app";
-          program = "${self.packages.${system}.tsnix}/bin/tsnix";
-        };
-      });
-
-      devShells = forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ (import rust-overlay) ];
-          };
-          rust = pkgs.rust-bin.stable.latest.default.override {
-            components = [
-              "rustfmt"
-              "clippy"
-            ];
-            targets = [ "wasm32-wasip1" ];
-          };
-        in
-        {
-          default = pkgs.mkShell {
-            packages = [
-              rust
-              pkgs.pkg-config
-              # `cc` for the linker and proc-macro build scripts.
-              pkgs.stdenv.cc
-            ];
-          };
-        }
-      );
-
-      checks = forAllSystems (system: {
-        tsnix = self.packages.${system}.tsnix;
-      });
-
-      formatter = forAllSystems (system: (import nixpkgs { inherit system; }).nixfmt);
-    };
+        flake.overlays.default = config.flake.overlays.tsnix;
+      }
+    );
 }

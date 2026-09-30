@@ -1,0 +1,13 @@
+[book]
+title = "tsnix"
+authors = ["LiAlH4"]
+language = "en"
+src = "."
+
+[build]
+build-dir = "book"
+
+[output.html]
+site-url = "/tsnix/"
+default-theme = "rust"
+preferred-dark-theme = "coal"

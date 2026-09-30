@@ -96,8 +96,7 @@ fn json_protocol_reports_errors() {
     let line = stdout
         .lines()
         .map(|line| line.trim_start_matches('\u{5}').trim())
-        .filter(|line| !line.is_empty())
-        .next_back()
+        .rfind(|line| !line.is_empty())
         .unwrap();
     let response: Value = serde_json::from_str(line).unwrap();
     assert_eq!(response["ok"], Value::Bool(false));

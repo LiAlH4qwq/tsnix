@@ -27,9 +27,32 @@ tsnix eval -f config.nix --argstr host example.com --arg port 8080
 # Validate only (fast; no evaluation)
 tsnix check -f config.nix
 
+# Interactive REPL (bindings persist; :commands)
+tsnix repl
+
+# Agent REPL: Lix repl-automation — ENQ (\x05) before each read, newline commands
+tsnix repl --agent
+
+# Agent REPL: ENQ readiness + newline-delimited JSON requests/responses
+tsnix repl --protocol json
+
 # Discover the full contract
 tsnix schema
 ```
+
+## REPL contract
+
+- `tsnix repl` (default): rustyline editor, `name = expr;` bindings, `:commands`
+  (`:help`, `:quit`, `:type`, `:print`, `:doc`, `:load`, `:format`, `:mode`,
+  `:bindings`, `:clear`). Not a TTY → plain line reader, no editor.
+- `--agent` / `--automation`: before **every** read (including continuation),
+  write one ENQ byte `0x05` to stdout and flush; read a newline-terminated
+  command; EOF exits 0. This is Lix's `repl-automation` protocol verbatim.
+- `--protocol json`: same ENQ readiness, then one JSON request per line and one
+  JSON response per line. Request: `{"expr"|"command"|"input": ...}` (a command
+  may carry `"arg"`). Response: `{"ok":true,"value"|"message"|"bound":...}` or
+  `{"ok":false,"diagnostics":[...]}` (the schema below).
+- REPL values render with `--format` (default `nix`, `<LAMBDA>` for functions).
 
 ## Hard contract
 
@@ -135,8 +158,14 @@ src/diagnostic.rs   structured diagnostics + rendering
 src/stubs.rs        Nix-source stubs for store/IO builtins
 src/output.rs       JSON -> Nix printer
 src/schema.rs       `tsnix schema`
+src/repl/           REPL engine + interacters (interactive/ENQ/JSON)
+src/wasm.rs         wasm-bindgen scaffold (feature `wasm`)
 src/cli.rs          clap CLI (binary-only)
 tests/cli.rs        end-to-end tests
+tests/repl.rs       REPL protocol tests
+nix/                flake-parts modules (package, docs, hooks, github, wasm)
+dev/                dev-only inputs (git hooks, GitHub Actions generation)
+docs/               bilingual mdBook sources
 ```
 
 ### Constraints

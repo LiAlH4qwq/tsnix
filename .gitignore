@@ -4,3 +4,4 @@
 .direnv/
 .envrc
 *.rs.bk
+book/

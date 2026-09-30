@@ -38,6 +38,7 @@ operations are therefore never faked — they are rejected with a clear error.
 | `--format nix` (best-effort pretty printer) | ✅ (paths become strings, functions rejected) |
 | `--arg` / `--argstr` top-level bindings | ✅ |
 | Local file I/O: `import`, `readFile`, `readDir`, `pathExists`, `getEnv`, … (`--io local`) | ✅ |
+| REPL: friendly (`nix repl`-style bindings, `:commands`) and agent modes (Lix ENQ, JSONL) | ✅ |
 | `derivation`, `fetchurl`, `writeFile`, `storePath`, `storeDir`, `toFile`, … | ❌ rejected (`TSNIX-NO-STORE`) |
 
 The complete rejected/optional list is in `tsnix schema`.
@@ -59,8 +60,10 @@ $ ./target/release/tsnix --help
 ```console
 $ nix build                 # host binary
 $ nix build .#static        # static musl binary for embedded targets
+$ nix build .#docs          # bilingual documentation site (mdBook)
+$ nix build .#wasm          # wasm32-wasip1 build (experimental)
 $ nix run . -- eval -e '1 + 1'
-$ nix develop               # dev shell with the pinned toolchain
+$ nix develop               # dev shell with the pinned toolchain, hooks and mdBook
 ```
 
 ## Usage
@@ -96,6 +99,16 @@ $ echo '{ a = 1; }' | tsnix eval -
 
 # Validate without evaluating
 $ tsnix check -f config.nix
+
+# Interactive REPL (bindings, :commands, history)
+$ tsnix repl
+tsnix> x = 21;
+tsnix> x * 2
+42
+
+# Agent-friendly REPL: Lix repl-automation (ENQ readiness) or JSON lines
+$ printf '1 + 1\n:quit\n' | tsnix repl --agent
+$ tsnix repl --protocol json
 
 # The machine-readable contract
 $ tsnix schema --pretty
