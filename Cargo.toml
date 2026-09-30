@@ -31,18 +31,31 @@ thiserror = "2"
 # Pure-Rust; already in snix-eval's tree. Used to render error spans.
 codemap = "0.1"
 
+# REPL only; gated behind the default `repl` feature.
+rustyline = { version = "18", optional = true }
+rnix = { version = "0.14", optional = true }
+# Must match snix-eval's versions so `env`/`Value` types line up.
+smol_str = { version = "0.2", optional = true }
+rustc-hash = { version = "2", optional = true }
+
+# Browser wasm scaffold.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+
 [dev-dependencies]
 assert_cmd = "2"
 predicates = "3"
 tempfile = "3"
-# Same parser snix-eval uses; lets us assert every stub is parseable.
-rnix = "0.14"
 
 [features]
-default = ["local-io"]
+default = ["local-io", "repl"]
 # Enables `--io local` (import/readFile/…) via snix-eval's `impure` feature and
 # its std-backed `StdIO`. Disable for a pure, no-filesystem build (e.g. wasm).
 local-io = ["snix-eval/impure"]
+# Enables the `tsnix repl` subcommand (friendly + agent modes).
+repl = ["dep:rustyline", "dep:rnix", "dep:smol_str", "dep:rustc-hash"]
+# Browser wasm-bindgen scaffold (wasm32-unknown-unknown).
+wasm = ["dep:wasm-bindgen"]
 # Forward snix-eval's memory optimisation to reduce peak RSS on embedded devices.
 no-leak = ["snix-eval/no_leak"]
 

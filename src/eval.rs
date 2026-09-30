@@ -11,7 +11,15 @@ use crate::program::{Wrap, compose, read_source};
 use crate::stubs;
 use crate::{EvalOptions, EvalOutput, Format, IoMode, Mode};
 
-type Builder = snix_eval::EvaluationBuilder<'static, 'static, 'static, Box<dyn snix_eval::EvalIO>>;
+pub(crate) type Builder =
+    snix_eval::EvaluationBuilder<'static, 'static, 'static, Box<dyn snix_eval::EvalIO>>;
+
+/// Build a bare evaluator builder with all store/IO stubs installed.
+///
+/// Shared by `eval`, `check` and the REPL.
+pub(crate) fn base_builder(io: IoMode) -> Result<Builder, EvalError> {
+    install(Evaluation::builder_pure(), io)
+}
 
 /// Evaluate a Nix expression or file, returning the rendered output.
 pub fn evaluate(options: &EvalOptions) -> Result<EvalOutput, EvalError> {
@@ -20,14 +28,11 @@ pub fn evaluate(options: &EvalOptions) -> Result<EvalOutput, EvalError> {
     program.location = location;
 
     let source_map = SourceCode::default();
-    let evaluation = install(
-        Evaluation::builder_pure()
-            .with_source_map(source_map.clone())
-            .mode(to_eval_mode(options.mode))
-            .nix_path(options.nix_path.clone()),
-        options.io,
-    )?
-    .build();
+    let evaluation = base_builder(options.io)?
+        .with_source_map(source_map.clone())
+        .mode(to_eval_mode(options.mode))
+        .nix_path(options.nix_path.clone())
+        .build();
 
     let result = evaluation.evaluate(&program.code, program.location.clone());
     let warnings = collect_warnings(&result.warnings, &source_map, program.line_offset, &base);
@@ -69,13 +74,10 @@ pub fn check(options: &crate::CheckOptions) -> Result<Vec<Diagnostic>, EvalError
     program.location = location;
 
     let source_map = SourceCode::default();
-    let evaluation = install(
-        Evaluation::builder_pure()
-            .with_source_map(source_map.clone())
-            .mode(EvalMode::Strict),
-        options.io,
-    )?
-    .build();
+    let evaluation = base_builder(options.io)?
+        .with_source_map(source_map.clone())
+        .mode(EvalMode::Strict)
+        .build();
 
     let result = evaluation.compile_only(&program.code, program.location.clone());
     let warnings = collect_warnings(&result.warnings, &source_map, program.line_offset, &base);
@@ -123,7 +125,7 @@ fn install(mut builder: Builder, io: IoMode) -> Result<Builder, EvalError> {
     Ok(builder)
 }
 
-fn to_eval_mode(mode: Mode) -> EvalMode {
+pub(crate) fn to_eval_mode(mode: Mode) -> EvalMode {
     match mode {
         Mode::Strict => EvalMode::Strict,
         Mode::Lazy => EvalMode::Lazy,

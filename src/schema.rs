@@ -84,6 +84,24 @@ pub fn schema() -> Value {
                     { "name": "--error-format <text|json>", "about": "Diagnostics format." }
                 ]
             },
+            "repl": {
+                "about": "Start a Nix-language REPL (friendly or agent mode).",
+                "args": [
+                    { "name": "--protocol <interactive|enq|json>", "about": "Input/output protocol. Default: interactive." },
+                    { "name": "--agent", "about": "Shorthand for --protocol enq (Lix repl-automation: ENQ readiness byte)." },
+                    { "name": "-F, --format <json|raw|nix>", "about": "Display format. Default: nix." },
+                    { "name": "--mode <strict|lazy>", "about": "Forcing mode. Default: strict." },
+                    { "name": "-l, --load <PATH>", "about": "Load a file on startup. Repeatable." },
+                    { "name": "--arg/--argstr", "about": "Seed bindings." },
+                    { "name": "--io <none|local>", "about": "Allow local file I/O. Default: none." }
+                ],
+                "protocols": {
+                    "interactive": "rustyline line editor with history and :commands.",
+                    "enq": "Before each read, write ENQ (U+0005) and flush; read a newline-terminated line; EOF exits. Continuation reads emit ENQ again.",
+                    "json": "ENQ readiness, then newline-delimited JSON: request {\"expr\"|\"command\"|\"input\"}, response {\"ok\",\"value\"|\"diagnostics\"}."
+                },
+                "commands": [ ":help/?", ":quit/q", ":type/t", ":print/p", ":doc", ":load/l", ":format", ":mode", ":bindings", ":clear" ]
+            },
             "schema": {
                 "about": "Print this document.",
                 "args": [{ "name": "--pretty", "about": "Pretty-print the schema." }]

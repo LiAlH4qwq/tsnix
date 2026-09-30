@@ -13,6 +13,9 @@ use serde_json::json;
 
 use tsnix::{Arg, CheckOptions, Diagnostic, EvalError, EvalOptions, Format, IoMode, Mode, Source};
 
+#[cfg(feature = "repl")]
+use tsnix::repl::{Protocol as ReplProtocol, ReplOptions};
+
 /// A minimal Nix-language evaluator (no store).
 #[derive(Debug, Parser)]
 #[command(name = "tsnix", version, about, long_about = None, disable_help_subcommand = true)]
@@ -27,8 +30,61 @@ enum Command {
     Eval(EvalArgs),
     /// Parse and compile without evaluating.
     Check(CheckArgs),
+    /// Start a Nix-language REPL (friendly or agent mode).
+    #[cfg(feature = "repl")]
+    Repl(ReplArgs),
     /// Print a machine-readable description of this CLI.
     Schema(SchemaArgs),
+}
+
+/// Variable bindings and I/O policy, shared by all commands.
+#[derive(Debug, Args)]
+struct BindingArgs {
+    /// Bind a name to a parsed Nix expression (`--arg NAME EXPR`).
+    #[arg(long, num_args = 2, action = ArgAction::Append, value_names = ["NAME", "EXPR"], allow_hyphen_values = true)]
+    arg: Vec<String>,
+
+    /// Bind a name to a string (`--argstr NAME STRING`).
+    #[arg(long, num_args = 2, action = ArgAction::Append, value_names = ["NAME", "STRING"], allow_hyphen_values = true)]
+    argstr: Vec<String>,
+
+    /// Allow local file I/O (`import`, `readFile`, …).
+    #[arg(long, value_enum, default_value_t = CliIo::None)]
+    io: CliIo,
+
+    /// Diagnostics format.
+    #[arg(long, value_enum, default_value_t = ErrorFormat::Auto)]
+    error_format: ErrorFormat,
+
+    /// Suppress non-essential output.
+    #[arg(short = 'q', long)]
+    quiet: bool,
+}
+
+impl BindingArgs {
+    fn args(&self) -> Vec<Arg> {
+        let mut args = Vec::new();
+        for pair in self.arg.chunks_exact(2) {
+            args.push(Arg::Nix {
+                name: pair[0].clone(),
+                expr: pair[1].clone(),
+            });
+        }
+        for pair in self.argstr.chunks_exact(2) {
+            args.push(Arg::Str {
+                name: pair[0].clone(),
+                value: pair[1].clone(),
+            });
+        }
+        args
+    }
+
+    fn io(&self) -> IoMode {
+        match self.io {
+            CliIo::None => IoMode::None,
+            CliIo::Local => IoMode::Local,
+        }
+    }
 }
 
 #[derive(Debug, Args)]
@@ -51,25 +107,8 @@ struct CommonArgs {
     #[arg(short = 'f', long, value_name = "PATH", conflicts_with_all = ["source", "expr"])]
     file: Option<PathBuf>,
 
-    /// Bind a name to a parsed Nix expression (`--arg NAME EXPR`).
-    #[arg(long, num_args = 2, action = ArgAction::Append, value_names = ["NAME", "EXPR"], allow_hyphen_values = true)]
-    arg: Vec<String>,
-
-    /// Bind a name to a string (`--argstr NAME STRING`).
-    #[arg(long, num_args = 2, action = ArgAction::Append, value_names = ["NAME", "STRING"], allow_hyphen_values = true)]
-    argstr: Vec<String>,
-
-    /// Allow local file I/O (`import`, `readFile`, …).
-    #[arg(long, value_enum, default_value_t = CliIo::None)]
-    io: CliIo,
-
-    /// Diagnostics format.
-    #[arg(long, value_enum, default_value_t = ErrorFormat::Auto)]
-    error_format: ErrorFormat,
-
-    /// Suppress warnings.
-    #[arg(short = 'q', long)]
-    quiet: bool,
+    #[command(flatten)]
+    bindings: BindingArgs,
 }
 
 impl CommonArgs {
@@ -82,30 +121,6 @@ impl CommonArgs {
             Source::File(source.clone())
         } else {
             Source::Stdin
-        }
-    }
-
-    fn args(&self) -> Vec<Arg> {
-        let mut args = Vec::new();
-        for pair in self.arg.chunks_exact(2) {
-            args.push(Arg::Nix {
-                name: pair[0].clone(),
-                expr: pair[1].clone(),
-            });
-        }
-        for pair in self.argstr.chunks_exact(2) {
-            args.push(Arg::Str {
-                name: pair[0].clone(),
-                value: pair[1].clone(),
-            });
-        }
-        args
-    }
-
-    fn io(&self) -> IoMode {
-        match self.io {
-            CliIo::None => IoMode::None,
-            CliIo::Local => IoMode::Local,
         }
     }
 }
@@ -142,6 +157,33 @@ struct CheckArgs {
     common: CommonArgs,
 }
 
+#[cfg(feature = "repl")]
+#[derive(Debug, Args)]
+struct ReplArgs {
+    #[command(flatten)]
+    bindings: BindingArgs,
+
+    /// Output format for displayed values.
+    #[arg(short = 'F', long, value_enum, default_value_t = CliFormat::Nix)]
+    format: CliFormat,
+
+    /// Forcing mode for displayed values.
+    #[arg(long, value_enum, default_value_t = CliMode::Strict)]
+    mode: CliMode,
+
+    /// Load a file on startup (repeatable).
+    #[arg(short = 'l', long = "load", value_name = "PATH")]
+    load: Vec<PathBuf>,
+
+    /// Input/output protocol.
+    #[arg(long, value_enum, default_value_t = CliProtocol::Interactive)]
+    protocol: CliProtocol,
+
+    /// Shorthand for `--protocol enq` (Lix repl-automation).
+    #[arg(long, visible_alias = "automation")]
+    agent: bool,
+}
+
 #[derive(Debug, Args)]
 struct SchemaArgs {
     /// Pretty-print the schema.
@@ -168,18 +210,43 @@ enum CliMode {
     Lazy,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum CliProtocol {
+    Interactive,
+    Enq,
+    Json,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 enum ErrorFormat {
     Auto,
     Text,
     Json,
 }
 
+impl ErrorFormat {
+    fn resolve(self) -> Self {
+        match self {
+            ErrorFormat::Auto => {
+                if std::io::stderr().is_terminal() {
+                    ErrorFormat::Text
+                } else {
+                    ErrorFormat::Json
+                }
+            }
+            explicit => explicit,
+        }
+    }
+}
+
 /// Parse arguments and run.
 pub fn main() -> ExitCode {
-    match Cli::parse().command {
+    let command = Cli::parse().command;
+    match command {
         Command::Eval(args) => run_eval(args),
         Command::Check(args) => run_check(args),
+        #[cfg(feature = "repl")]
+        Command::Repl(args) => run_repl(args),
         Command::Schema(args) => run_schema(args),
     }
 }
@@ -187,25 +254,18 @@ pub fn main() -> ExitCode {
 fn run_eval(args: EvalArgs) -> ExitCode {
     let options = EvalOptions {
         source: args.common.source(),
-        format: match args.format {
-            CliFormat::Json => Format::Json,
-            CliFormat::Raw => Format::Raw,
-            CliFormat::Nix => Format::Nix,
-        },
-        io: args.common.io(),
-        mode: match args.mode {
-            CliMode::Strict => Mode::Strict,
-            CliMode::Lazy => Mode::Lazy,
-        },
-        args: args.common.args(),
+        format: to_format(args.format),
+        io: args.common.bindings.io(),
+        mode: to_mode(args.mode),
+        args: args.common.bindings.args(),
         pretty: args.pretty,
         nix_path: args.nix_path,
     };
 
-    let diagnostics = args.common.error_format.resolve();
+    let diagnostics = args.common.bindings.error_format.resolve();
     match tsnix::evaluate(&options) {
         Ok(output) => {
-            if !args.common.quiet {
+            if !args.common.bindings.quiet {
                 emit_diagnostics(&output.warnings, diagnostics);
             }
             match write_output(&output.text, args.output.as_deref()) {
@@ -232,19 +292,50 @@ fn run_eval(args: EvalArgs) -> ExitCode {
 fn run_check(args: CheckArgs) -> ExitCode {
     let options = CheckOptions {
         source: args.common.source(),
-        io: args.common.io(),
-        args: args.common.args(),
+        io: args.common.bindings.io(),
+        args: args.common.bindings.args(),
     };
-    let diagnostics = args.common.error_format.resolve();
+    let diagnostics = args.common.bindings.error_format.resolve();
     match tsnix::check(&options) {
         Ok(warnings) => {
-            if !args.common.quiet {
+            if !args.common.bindings.quiet {
                 emit_diagnostics(&warnings, diagnostics);
             }
             ExitCode::SUCCESS
         }
         Err(error) => {
             emit_error(&error, diagnostics);
+            ExitCode::from(1)
+        }
+    }
+}
+
+#[cfg(feature = "repl")]
+fn run_repl(args: ReplArgs) -> ExitCode {
+    let protocol = if args.agent && args.protocol == CliProtocol::Interactive {
+        CliProtocol::Enq
+    } else {
+        args.protocol
+    };
+    let error_format = args.bindings.error_format.resolve();
+    let options = ReplOptions {
+        io: args.bindings.io(),
+        mode: to_mode(args.mode),
+        format: to_format(args.format),
+        args: args.bindings.args(),
+        load: args.load,
+        protocol: match protocol {
+            CliProtocol::Interactive => ReplProtocol::Interactive,
+            CliProtocol::Enq => ReplProtocol::Enq,
+            CliProtocol::Json => ReplProtocol::Json,
+        },
+        errors_json: error_format == ErrorFormat::Json,
+        quiet: args.bindings.quiet,
+    };
+    match tsnix::repl::run(options) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            emit_error(&error, error_format);
             ExitCode::from(1)
         }
     }
@@ -269,18 +360,18 @@ fn run_schema(args: SchemaArgs) -> ExitCode {
     }
 }
 
-impl ErrorFormat {
-    fn resolve(self) -> Self {
-        match self {
-            ErrorFormat::Auto => {
-                if std::io::stderr().is_terminal() {
-                    ErrorFormat::Text
-                } else {
-                    ErrorFormat::Json
-                }
-            }
-            explicit => explicit,
-        }
+fn to_format(format: CliFormat) -> Format {
+    match format {
+        CliFormat::Json => Format::Json,
+        CliFormat::Raw => Format::Raw,
+        CliFormat::Nix => Format::Nix,
+    }
+}
+
+fn to_mode(mode: CliMode) -> Mode {
+    match mode {
+        CliMode::Strict => Mode::Strict,
+        CliMode::Lazy => Mode::Lazy,
     }
 }
 

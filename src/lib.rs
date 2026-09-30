@@ -30,8 +30,12 @@ mod diagnostic;
 mod eval;
 mod output;
 mod program;
+#[cfg(feature = "repl")]
+pub mod repl;
 mod schema;
 mod stubs;
+#[cfg(all(feature = "wasm", target_arch = "wasm32"))]
+pub mod wasm;
 
 use std::path::PathBuf;
 
