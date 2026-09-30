@@ -15,13 +15,6 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # mdBook theme used by the documentation site (`flake = false`: it is an
-    # asset tree, not a flake).
-    mdbook-theme-milieuim = {
-      url = "github:milieuim/mdbook-theme-milieuim";
-      flake = false;
-    };
   };
 
   outputs =

@@ -20,22 +20,6 @@
         "type": "github"
       }
     },
-    "mdbook-theme-milieuim": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1746802794,
-        "narHash": "sha256-otOdvbmeSXyGifRyYA+/M/kQffRLEJbb6lMtqhjkHZ4=",
-        "owner": "milieuim",
-        "repo": "mdbook-theme-milieuim",
-        "rev": "ec716d732fb77907dfeaf4d23e754813ad1688c3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "milieuim",
-        "repo": "mdbook-theme-milieuim",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1790652569,
@@ -55,7 +39,6 @@
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "mdbook-theme-milieuim": "mdbook-theme-milieuim",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay",
         "systems": "systems"
