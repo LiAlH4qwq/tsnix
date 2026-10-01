@@ -41,6 +41,18 @@
 `line_offset`，列号不受影响。`diagnostic.rs` 会减去偏移并自行渲染无彩色片段，
 使结构化 `span` 与人类文本都指向用户真实位置。
 
+## 标准库
+
+启用 `stdlib` feature（默认）时，`eval.rs` 用
+`add_src_builtin("std", …)` 注册内嵌的 `src/stdlib.nix`，因此可以
+`builtins.std` 访问。`program.rs` 额外注入一条极小的前奏绑定
+`std = builtins.std;`，并通过 `builtins.seq std (…)` 引用它，使该绑定被视为
+“已使用”（不产生 `UnusedBinding` 警告）且不影响用户结果。用户传入
+`--arg std …` 会抑制注入的绑定。REPL 会把同一个值种入其 `env`。
+
+`stdlib.rs` 内嵌源码，并承载 `tsnix libdoc` 与 schema `stdlib` 段所需的 Rust
+目录；单元测试会解析 `stdlib.nix` 并断言导出名与目录一致。
+
 ## store 与 I/O
 
 纯模式下 `snix-eval` 不注册 store builtin。`tsnix` 另外通过

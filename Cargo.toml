@@ -46,14 +46,19 @@ wasm-bindgen = { version = "0.2", optional = true }
 assert_cmd = "2"
 predicates = "3"
 tempfile = "3"
+# Used to parse-check `src/stdlib.nix` independently of the `repl` feature.
+rnix = "0.14"
 
 [features]
-default = ["local-io", "repl"]
+default = ["local-io", "repl", "stdlib"]
 # Enables `--io local` (import/readFile/…) via snix-eval's `impure` feature and
 # its std-backed `StdIO`. Disable for a pure, no-filesystem build (e.g. wasm).
 local-io = ["snix-eval/impure"]
 # Enables the `tsnix repl` subcommand (friendly + agent modes).
 repl = ["dep:rustyline", "dep:rnix", "dep:smol_str", "dep:rustc-hash"]
+# Enables the pure-Nix `std` standard library (`builtins.std`, plus a bare
+# `std` prelude binding). Pure functions only: no store, no I/O.
+stdlib = []
 # Browser wasm-bindgen scaffold (wasm32-unknown-unknown).
 wasm = ["dep:wasm-bindgen"]
 # Forward snix-eval's memory optimisation to reduce peak RSS on embedded devices.

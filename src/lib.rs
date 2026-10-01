@@ -33,6 +33,8 @@ mod program;
 #[cfg(feature = "repl")]
 pub mod repl;
 mod schema;
+#[cfg(feature = "stdlib")]
+mod stdlib;
 mod stubs;
 #[cfg(all(feature = "wasm", target_arch = "wasm32"))]
 pub mod wasm;
@@ -44,6 +46,8 @@ use serde::{Deserialize, Serialize};
 pub use diagnostic::{Diagnostic, EvalError, Position, Severity, Span};
 pub use eval::{check, evaluate};
 pub use schema::schema;
+#[cfg(feature = "stdlib")]
+pub use schema::stdlib_catalogue;
 
 /// The output format for a successful evaluation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

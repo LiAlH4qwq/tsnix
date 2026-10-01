@@ -47,6 +47,20 @@ line numbers are shifted by a known `line_offset` and columns are unaffected.
 `diagnostic.rs` subtracts the offset and renders its own colourless snippet, so
 structured `span`s and human text both point at the user's real lines.
 
+## Standard library
+
+When the `stdlib` feature is on (default), `eval.rs` registers the embedded
+`src/stdlib.nix` with `add_src_builtin("std", …)`, so it is available as
+`builtins.std`. `program.rs` additionally injects a tiny prelude binding
+`std = builtins.std;` and references it through `builtins.seq std (…)`, which
+keeps the binding "used" (no `UnusedBinding` warning) and leaves the user's
+result untouched. A user `--arg std …` suppresses the injected binding. The
+REPL seeds the same value into its `env`.
+
+`stdlib.rs` embeds the source and carries the Rust catalogue behind
+`tsnix libdoc` and the schema's `stdlib` section; a unit test parses
+`stdlib.nix` and asserts the exported names match the catalogue.
+
 ## Store and I/O
 
 `snix-eval` registers no store builtins in pure mode. `tsnix` additionally adds

@@ -37,6 +37,7 @@ operations are therefore never faked — they are rejected with a clear error.
 | `--format raw` (via `builtins.toString`) | ✅ |
 | `--format nix` (best-effort pretty printer) | ✅ (paths become strings, functions rejected) |
 | `--arg` / `--argstr` top-level bindings | ✅ |
+| `std` standard library (pure Nix; merge, paths, lists, strings, case conversion) | ✅ default; off with `--no-default-features` |
 | Local file I/O: `import`, `readFile`, `readDir`, `pathExists`, `getEnv`, … (`--io local`) | ✅ |
 | REPL: friendly (`nix repl`-style bindings, `:commands`) and agent modes (Lix ENQ, JSONL) | ✅ |
 | `derivation`, `fetchurl`, `writeFile`, `storePath`, `storeDir`, `toFile`, … | ❌ rejected (`TSNIX-NO-STORE`) |
@@ -93,6 +94,15 @@ $ tsnix eval -e '"hello ${builtins.currentSystem}"' --format raw
 # Nix pretty printing
 $ tsnix eval -e '{ a = 1; b = [ 1 2 ]; }' --format nix
 { a = 1; b = [ 1 2 ]; }
+
+# The `std` standard library (pure Nix, no store, no I/O)
+$ tsnix eval -e 'std.merge { a = { x = 1; }; } { a = { y = 2; }; }'
+{"a":{"x":1,"y":2}}
+$ tsnix eval -e 'std.toSnakeCase "HTTPServerConfig"'
+"http_server_config"
+
+# Discover the library as JSON
+$ tsnix libdoc --pretty
 
 # Read from stdin
 $ echo '{ a = 1; }' | tsnix eval -
@@ -206,9 +216,11 @@ See [docs/architecture.md](docs/architecture.md) for the design.
 
 ## Building for embedded / wasm
 
-- `--no-default-features` removes local I/O (`snix-eval`'s `impure` feature) and
-  builds a pure evaluator with no filesystem dependency; `--io local` then
-  reports `TSNIX-NO-LOCAL-IO`.
+- `--no-default-features` removes local I/O (`snix-eval`'s `impure` feature),
+  the REPL and `std`, building a pure evaluator with no filesystem dependency;
+  `--io local` then reports `TSNIX-NO-LOCAL-IO`.
+- `--no-default-features --features stdlib` keeps the pure evaluator and `std`
+  (the library has no I/O dependency).
 - `no-leak` forwards `snix-eval/no_leak` to reduce peak memory at some speed
   cost.
 - The release profile uses `lto = "fat"`, `codegen-units = 1`, `opt-level = "s"`

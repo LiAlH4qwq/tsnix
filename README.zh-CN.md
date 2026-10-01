@@ -34,6 +34,7 @@
 | `--format raw`（经由 `builtins.toString`） | ✅ |
 | `--format nix`（尽力而为的打印器） | ✅（path 会变成字符串，函数会被拒绝） |
 | `--arg` / `--argstr` 顶层变量绑定 | ✅ |
+| `std` 标准库（纯 Nix；合并、深路径、列表、字符串、大小写转换） | ✅ 默认；`--no-default-features` 关闭 |
 | 本地文件 I/O：`import`、`readFile`、`readDir`、`pathExists`、`getEnv` …（`--io local`） | ✅ |
 | REPL：友好模式（`nix repl` 风格绑定、`:命令`）与智能体模式（Lix ENQ、JSONL） | ✅ |
 | `derivation`、`fetchurl`、`writeFile`、`storePath`、`storeDir`、`toFile` … | ❌ 拒绝（`TSNIX-NO-STORE`） |
@@ -87,6 +88,15 @@ $ tsnix eval -e '"hello ${builtins.currentSystem}"' --format raw
 # Nix 打印
 $ tsnix eval -e '{ a = 1; b = [ 1 2 ]; }' --format nix
 { a = 1; b = [ 1 2 ]; }
+
+# `std` 标准库（纯 Nix，无 store，无 I/O）
+$ tsnix eval -e 'std.merge { a = { x = 1; }; } { a = { y = 2; }; }'
+{"a":{"x":1,"y":2}}
+$ tsnix eval -e 'std.toSnakeCase "HTTPServerConfig"'
+"http_server_config"
+
+# 以 JSON 查看标准库目录
+$ tsnix libdoc --pretty
 
 # 从 stdin 读取
 $ echo '{ a = 1; }' | tsnix eval -
@@ -198,8 +208,11 @@ println!("{}", output.text);
 
 ## 嵌入式 / wasm 构建
 
-- `--no-default-features` 会去掉本地 I/O（`snix-eval` 的 `impure` feature），
-  得到不依赖文件系统的纯求值器；此时 `--io local` 会报 `TSNIX-NO-LOCAL-IO`。
+- `--no-default-features` 会去掉本地 I/O（`snix-eval` 的 `impure` feature）、
+  REPL 与 `std`，得到不依赖文件系统的纯求值器；此时 `--io local` 会报
+  `TSNIX-NO-LOCAL-IO`，`std` 不可用。
+- `--no-default-features --features stdlib` 保留纯求值器与 `std`（标准库本身
+  无 I/O 依赖）。
 - `no-leak` 转发 `snix-eval/no_leak`，以一定速度代价降低峰值内存。
 - release profile 使用 `lto = "fat"`、`codegen-units = 1`、`opt-level = "s"`、
   `strip`。

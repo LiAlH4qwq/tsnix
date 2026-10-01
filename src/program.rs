@@ -83,6 +83,14 @@ fn synthetic_location(name: &str) -> PathBuf {
 /// merely shifted by [`Program::line_offset`] and columns stay exact.
 pub(crate) fn compose(base: &str, args: &[Arg], wrap: Wrap) -> Result<Program, EvalError> {
     let mut prelude = String::new();
+
+    // Inject the standard library as a bare `std` binding. A user binding of
+    // the same name (`--arg std …`) wins and suppresses the injection.
+    let inject_std = cfg!(feature = "stdlib") && !args.iter().any(|arg| arg_name(arg) == "std");
+    if inject_std {
+        prelude.push_str("  std = builtins.std;\n");
+    }
+
     for arg in args {
         let (name, value) = match arg {
             Arg::Nix { name, expr } => (name, format!("({expr})")),
@@ -92,19 +100,23 @@ pub(crate) fn compose(base: &str, args: &[Arg], wrap: Wrap) -> Result<Program, E
         writeln!(prelude, "  {name} = {value};").expect("writing to String never fails");
     }
 
-    let prefix = if args.is_empty() {
+    let prefix = if prelude.is_empty() {
         String::new()
     } else {
         format!("let\n{prelude}in\n")
     };
     let prefix_lines = prefix.matches('\n').count();
 
-    let open = match wrap {
-        Wrap::Plain => "(\n",
-        Wrap::ToJson => "builtins.toJSON (\n",
-        Wrap::ToString => "builtins.toString (\n",
+    // When `std` is injected, reference it through `builtins.seq` so the
+    // synthetic binding counts as used and does not raise `UnusedBinding`.
+    let (open, close) = match (wrap, inject_std) {
+        (Wrap::Plain, false) => ("(\n", "\n)"),
+        (Wrap::ToJson, false) => ("builtins.toJSON (\n", "\n)"),
+        (Wrap::ToString, false) => ("builtins.toString (\n", "\n)"),
+        (Wrap::Plain, true) => ("builtins.seq std (\n", "\n)"),
+        (Wrap::ToJson, true) => ("builtins.toJSON (builtins.seq std (\n", "\n))"),
+        (Wrap::ToString, true) => ("builtins.toString (builtins.seq std (\n", "\n))"),
     };
-    let close = "\n)";
 
     let code = format!("{prefix}{open}{base}{close}");
     let line_offset = prefix_lines + open.matches('\n').count();
@@ -114,6 +126,13 @@ pub(crate) fn compose(base: &str, args: &[Arg], wrap: Wrap) -> Result<Program, E
         line_offset,
         location: None,
     })
+}
+
+/// The binding name of an [`Arg`], regardless of variant.
+fn arg_name(arg: &Arg) -> &str {
+    match arg {
+        Arg::Nix { name, .. } | Arg::Str { name, .. } => name,
+    }
 }
 
 fn validate_ident(name: &str) -> Result<(), EvalError> {

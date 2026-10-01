@@ -62,6 +62,14 @@ impl Session {
             env: FxHashMap::default(),
         };
 
+        // The standard library is available as a bare `std` binding inside the
+        // REPL; `--arg std …` (handled below) overrides it.
+        #[cfg(feature = "stdlib")]
+        {
+            let std = session.eval_value("builtins.std", Mode::Lazy)?;
+            session.env.insert(SmolStr::new("std"), std);
+        }
+
         for arg in &options.args {
             match arg {
                 Arg::Str { name, value } => {

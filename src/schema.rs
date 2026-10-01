@@ -7,7 +7,8 @@ use serde_json::{Value, json};
 
 /// Return the CLI schema as a JSON value.
 pub fn schema() -> Value {
-    json!({
+    #[allow(unused_mut)]
+    let mut value = json!({
         "name": "tsnix",
         "version": env!("CARGO_PKG_VERSION"),
         "description": "A minimal Nix-language evaluator built solely on snix-eval. No Nix store.",
@@ -113,5 +114,69 @@ pub fn schema() -> Value {
             { "about": "Bind a string and import local files", "run": "tsnix eval -f config.nix --io local --argstr host example.com" },
             { "about": "Validate only", "run": "tsnix check -f config.nix" }
         ]
+    });
+
+    #[cfg(feature = "stdlib")]
+    {
+        value["commands"]["libdoc"] = json!({
+            "about": "Print the `std` standard library catalogue as JSON.",
+            "args": [{ "name": "--pretty", "about": "Pretty-print the catalogue." }]
+        });
+        value["stdlib"] = stdlib_section();
+    }
+
+    value
+}
+
+/// The `stdlib` section of the schema (present only when compiled in).
+#[cfg(feature = "stdlib")]
+fn stdlib_section() -> Value {
+    json!({
+        "available": true,
+        "namespace": "std",
+        "bindings": {
+            "global": "std",
+            "builtin": "builtins.std",
+            "note": "`std` is injected as a top-level binding unless a user `--arg std` overrides it."
+        },
+        "prelude": crate::stdlib::PRELUDE,
+        "functions": crate::stdlib::FUNCTIONS.iter().map(|function| json!({
+            "name": function.name,
+            "signature": function.signature,
+            "about": function.about,
+            "group": function.group,
+            "nixpkgs": function.nixpkgs,
+        })).collect::<Vec<_>>(),
+    })
+}
+
+/// Return the catalogue of `std` functions as a JSON value.
+///
+/// This is the machine-readable contract behind `tsnix libdoc`.
+#[cfg(feature = "stdlib")]
+pub fn stdlib_catalogue() -> Value {
+    let groups: Vec<&str> = {
+        let mut groups: Vec<&str> = crate::stdlib::FUNCTIONS
+            .iter()
+            .map(|function| function.group)
+            .collect();
+        groups.dedup();
+        groups
+    };
+
+    json!({
+        "version": 1,
+        "name": "std",
+        "about": "The tsnix standard library: pure Nix, no store, no I/O.",
+        "usage": "Available as `std` and `builtins.std`. Use `with std;` as a prelude.",
+        "groups": groups,
+        "prelude": crate::stdlib::PRELUDE,
+        "functions": crate::stdlib::FUNCTIONS.iter().map(|function| json!({
+            "name": function.name,
+            "signature": function.signature,
+            "about": function.about,
+            "group": function.group,
+            "nixpkgs": function.nixpkgs,
+        })).collect::<Vec<_>>(),
     })
 }

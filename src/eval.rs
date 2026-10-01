@@ -122,6 +122,10 @@ fn install(mut builder: Builder, io: IoMode) -> Result<Builder, EvalError> {
     for &(name, source) in stubs::STORE_STUBS {
         builder = builder.add_src_builtin(name, source);
     }
+    #[cfg(feature = "stdlib")]
+    {
+        builder = builder.add_src_builtin("std", crate::stdlib::STDLIB_SRC);
+    }
     Ok(builder)
 }
 

@@ -10,7 +10,9 @@ tsnix <COMMAND>
 Commands:
   eval    Evaluate a Nix expression or file
   check   Parse and compile without evaluating
+  repl    Start a Nix-language REPL (friendly or agent mode)
   schema  Print a machine-readable description of this CLI
+  libdoc  Print the `std` standard library catalogue as JSON
 ```
 
 ## Common options (`eval` and `check`)
@@ -45,6 +47,17 @@ Exactly one input must be selected. `-` (or no input at all) reads stdin.
 | Option | Description |
 | --- | --- |
 | `--pretty` | Pretty-print the schema. |
+
+## `libdoc`
+
+Prints the `std` standard library catalogue as JSON: every function's name,
+signature, description, group and closest nixpkgs `lib` name, plus the list of
+re-exported prelude builtins. It is present only when the `stdlib` feature is
+compiled in (the default).
+
+| Option | Description |
+| --- | --- |
+| `--pretty` | Pretty-print the catalogue. |
 
 ## Exit codes
 

@@ -38,7 +38,23 @@ tsnix repl --protocol json
 
 # Discover the full contract
 tsnix schema
+
+# Discover the standard library as JSON (present by default)
+tsnix libdoc --pretty
 ```
+
+## Standard library (`std`)
+
+- Compiled in by default (cargo feature `stdlib`); `--no-default-features`
+  removes it. `--no-default-features --features stdlib` keeps it.
+- Always pure: no store, no I/O, deterministic. Safe under `builtins.toJSON`.
+- Available as `std` (top-level binding) and `builtins.std`. A user `--arg std`
+  overrides the binding; `builtins.std` remains.
+- `with std;` works as a prelude (core list/attr builtins are re-exported).
+- Naming is flat and cross-language (Clojure/Elixir/lodash/Haskell), not
+  nixpkgs; `tsnix libdoc` records the closest nixpkgs `lib` name per function.
+- The catalogue is generated from `src/stdlib.rs`; a unit test parses
+  `src/stdlib.nix` and fails if the two drift.
 
 ## REPL contract
 
@@ -153,16 +169,19 @@ Repository layout:
 ```
 src/lib.rs          public embedding API
 src/eval.rs         build the evaluator, install stubs, run
-src/program.rs      input reading, --arg prelude, output wrapper
+src/program.rs      input reading, --arg/std prelude, output wrapper
 src/diagnostic.rs   structured diagnostics + rendering
 src/stubs.rs        Nix-source stubs for store/IO builtins
+src/stdlib.nix      the pure-Nix `std` implementation (feature `stdlib`)
+src/stdlib.rs       embedded source + catalogue (`libdoc`) + drift test
 src/output.rs       JSON -> Nix printer
-src/schema.rs       `tsnix schema`
+src/schema.rs       `tsnix schema` (embeds the `std` catalogue)
 src/repl/           REPL engine + interacters (interactive/ENQ/JSON)
 src/wasm.rs         wasm-bindgen scaffold (feature `wasm`)
 src/cli.rs          clap CLI (binary-only)
 tests/cli.rs        end-to-end tests
 tests/repl.rs       REPL protocol tests
+tests/stdlib.rs     `std` end-to-end tests
 nix/                flake-parts modules (package, docs, hooks, github, wasm)
 dev/                dev-only inputs (git hooks, GitHub Actions generation)
 docs/               bilingual mdBook sources

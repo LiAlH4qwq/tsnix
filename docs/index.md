@@ -20,6 +20,7 @@ $ tsnix eval -e '{ a = 1; b = [ true null ]; }'
 ## Chapters
 
 - [CLI reference](cli.md) — commands, options and exit codes.
+- [Standard library](stdlib.md) — the pure-Nix `std` namespace.
 - [Diagnostics](errors.md) — the JSON diagnostic schema and stable codes.
 - [REPL](repl.md) — the friendly and agent-friendly interactive modes.
 - [Architecture](architecture.md) — how evaluation, stubs and output work.

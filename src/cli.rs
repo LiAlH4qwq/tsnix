@@ -35,6 +35,9 @@ enum Command {
     Repl(ReplArgs),
     /// Print a machine-readable description of this CLI.
     Schema(SchemaArgs),
+    /// Print the `std` standard library catalogue as JSON.
+    #[cfg(feature = "stdlib")]
+    Libdoc(LibdocArgs),
 }
 
 /// Variable bindings and I/O policy, shared by all commands.
@@ -191,6 +194,14 @@ struct SchemaArgs {
     pretty: bool,
 }
 
+#[cfg(feature = "stdlib")]
+#[derive(Debug, Args)]
+struct LibdocArgs {
+    /// Pretty-print the catalogue.
+    #[arg(long)]
+    pretty: bool,
+}
+
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum CliFormat {
     Json,
@@ -248,6 +259,8 @@ pub fn main() -> ExitCode {
         #[cfg(feature = "repl")]
         Command::Repl(args) => run_repl(args),
         Command::Schema(args) => run_schema(args),
+        #[cfg(feature = "stdlib")]
+        Command::Libdoc(args) => run_libdoc(args),
     }
 }
 
@@ -355,6 +368,26 @@ fn run_schema(args: SchemaArgs) -> ExitCode {
         }
         Err(error) => {
             eprintln!("tsnix: cannot serialise schema: {error}");
+            ExitCode::from(1)
+        }
+    }
+}
+
+#[cfg(feature = "stdlib")]
+fn run_libdoc(args: LibdocArgs) -> ExitCode {
+    let value = tsnix::stdlib_catalogue();
+    let text = if args.pretty {
+        serde_json::to_string_pretty(&value)
+    } else {
+        serde_json::to_string(&value)
+    };
+    match text {
+        Ok(text) => {
+            println!("{text}");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("tsnix: cannot serialise catalogue: {error}");
             ExitCode::from(1)
         }
     }
