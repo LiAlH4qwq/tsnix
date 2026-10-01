@@ -1,6 +1,11 @@
 # tsnix
 
-`tsnix` 求值 **Nix 语言** 并输出结果。它仅基于
+<p align="center"><img src="logo.svg" width="220" alt="tsnix logo"></p>
+
+> **征集图标设计。** `tsnix` 目前只有字标，欢迎在
+> [issue 区](https://github.com/LiAlH4qwq/tsnix/issues) 提交你的图标设计。
+
+`tsnix` 是 **tiny snix-eval CLI** 的缩写，求值 **Nix 语言** 并输出结果。它仅基于
 [`snix-eval`](https://snix.dev) 构建，**不包含 Nix store**，因此在无法使用
 `nix` 或 `nix` 过重的场景下（例如 Android 模块或嵌入式设备）也能把 Nix
 表达式转成 JSON。

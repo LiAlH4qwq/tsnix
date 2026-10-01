@@ -1,6 +1,12 @@
 # tsnix
 
-一个基于 [`snix-eval`](https://snix.dev) 构建的**极简、可嵌入的 Nix 语言求值器**。
+<p align="center"><img src="docs/logo.svg" width="220" alt="tsnix logo"></p>
+
+> **征集图标设计。** `tsnix` 目前只有字标，欢迎在
+> [issue 区](https://github.com/LiAlH4qwq/tsnix/issues) 提交你的图标设计。
+
+`tsnix` 是 **tiny snix-eval CLI** 的缩写：一个基于
+[`snix-eval`](https://snix.dev) 构建的**极简、可嵌入的 Nix 语言求值器**。
 它**不包含 Nix store**：只负责求值 Nix 语言并输出 JSON / 原始字符串 / Nix 源码，
 因此可以在没有 `nix` 或 `nix` 过重的场景下生成配置——例如 Android Magisk/KernelSU
 模块或嵌入式设备。

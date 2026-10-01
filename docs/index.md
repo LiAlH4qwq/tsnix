@@ -1,9 +1,16 @@
 # tsnix
 
-`tsnix` evaluates the **Nix language** and prints the result. It is built
-solely on [`snix-eval`](https://snix.dev) and contains **no Nix store**, so it
-can turn Nix expressions into JSON where the `nix` binary is unavailable or too
-heavy — for example an Android module or an embedded device.
+<p align="center"><img src="logo.svg" width="220" alt="tsnix logo"></p>
+
+> **Looking for an icon.** `tsnix` currently ships with a wordmark only; icon
+> designs are being solicited — share yours in the
+> [issue tracker](https://github.com/LiAlH4qwq/tsnix/issues).
+
+`tsnix` — short for **tiny snix-eval CLI** — evaluates the **Nix language** and
+prints the result. It is built solely on [`snix-eval`](https://snix.dev) and
+contains **no Nix store**, so it can turn Nix expressions into JSON where the
+`nix` binary is unavailable or too heavy — for example an Android module or an
+embedded device.
 
 It is deliberately **not** a `nix` clone:
 

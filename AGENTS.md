@@ -4,7 +4,8 @@ Instructions for AI agents working with or on `tsnix`.
 
 ## What this is
 
-`tsnix` evaluates the **Nix language** and prints the result. It plugs into
+`tsnix` — short for **tiny snix-eval CLI** — evaluates the **Nix language** and
+prints the result. It plugs into
 `snix-eval` only and never touches a Nix store. It is the right tool when you
 need to turn Nix expressions into JSON (for example to generate a config file)
 but cannot rely on the `nix` binary or a store.
@@ -183,8 +184,10 @@ tests/cli.rs        end-to-end tests
 tests/repl.rs       REPL protocol tests
 tests/stdlib.rs     `std` end-to-end tests
 nix/                flake-parts modules (package, docs, hooks, github, wasm)
-dev/                dev-only inputs (git hooks, GitHub Actions generation)
-docs/               bilingual mdBook sources
+dev/                dev-only inputs + modules (docs theme, git hooks, GitHub
+                    Actions generation); docs/`rustdoc` are built from the
+                    `dev` partition, so `nix build .#docs` still works
+docs/               bilingual mdBook sources (rose-pine-dawn mdBook theme)
 ```
 
 ### Constraints

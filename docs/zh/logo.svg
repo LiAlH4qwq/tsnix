@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 229 87" role="img" aria-label="tsnix">
+  <title>tsnix</title>
+  <!-- Wordmark set in Quicksand SemiBold (SIL OFL 1.1). A subset is
+       embedded below; the full licence is in docs/fonts/OFL.txt. -->
+  <defs>
+    <style>@font-face{font-family:'Quicksand';font-style:normal;font-weight:600;font-display:swap;src:url(data:font/woff2;base64,d09GMgABAAAAAAQ8AA8AAAAAB/AAAAPlAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhwbIBwqBmA/U1RBVCoATBEICoUMhA8LEgABNgIkAyAEIAWETgcgG1oGKK4GYyLTcK/Ep5g6YvLEb6/drVn5S12xLB6el7P+3JesjQpwm9luZ6qVS0iV9clSXf7//dyTuaWde5bEcE9m+YtYpEINIyWa1QDv/+zvve8LSnLiFudknb6Qlg2GuCgYdPN5BpKORcUBZvWayWtjUgbppmXWdUVWa7H/uaZe1PMD/XYEJ34i2ZutcVwg0WCzgZ7Nm++NGrSCcDYgnzrdjol4CD0s7VZKjEUGPq8XI1AWkCQhhIziQqC0uvrw0OFjp8rJQh6AQGnNDZFQvMqKuRtW6UVXQTaVTjOlSYWKRcbEiVnWoj3hB/m3xxfjy1Jx5j+fIXsEWUAC4r8UaIgKoaRAVRh1kc2Ll2wIhCQgsvzZJGRQFc0lT+kJKa2kJFnK5IvzeQzMm5jfixEtqop3GyIPFUBJUBFSCs/wN8qiLJCHEEKSEeVb9aHVrkgqU35Grp/0MYjQgiHy5wAsL7p5JCecPFXjx4s0eQaaHlg722dMbfq6Hu7ADTs6N4S8Dx7avbfXgyi4+8oU7aytalo01bO8wUNaON0PuesHVs/BeV7u7V268LZAZXLHSGCxoymllGvo8Zy+w3zYM7OLk3dWpBcJc0coUDLlTchmp6Yq+Cn51L3F8+W9nEQ1Y1byPPy8FbljXVbeMo97XH2Yd1xNT4HnWiPS3vWzkrLmFHLTnqi2rS5basjN7c+cpFuYG1a/1XxSyfHf//D1naFNOpkbn03h39qH/wfSGd+qgz2YNess/V96UC1dYA7oF3XsqiWxkDrlv7/TL60t7pBq0tFT4Toq8WfVQQ57gHM5HpszUFnAW+adV56JlimWKFu2WxVBQMa8OXrJfF392IiKtV6fG2Zy/lwbc/4B7ktVFvOrWWmldTuK0wOv+5W5gyzCwEUHt+NYPY5DS6bU2ylkCKcksmoBQ9QFxZsjKK5ESQMhekNOpCUEMrE1ZludIt04+Ccn8xt8apd+wS8/9c/FIHT2e6YQKC6B4KObPSLMb48Q5NeVTCMN/ejtx8B06yq+1Y8tUDF+UQ3SGUZJC2Usk4GslxUoZR0qsqWImpABoXLUhKRitIaMrtEbsprGKiimdmy3ig+JU5ygbLxMRxb2aecstoRLIZH5wJoVq3aBZzIBeBBQcDQehokH7rksKgHHB04FfDKLywOGZD6fzbNnYUGixGYHWHMci2EBTeoSRGZsDIlOYWJEkWGLErOvMAwKXWKOrx+ZAhFrU/BI4BG4QgIeuGIx+cAtRH7hkMHefJB9InC/64xFx1s3t2LFln237ty6tJ8uzFwvuOkyG8Od19pZj1K4B2hNCY0RyJvBTFMilJ9JZw==) format('woff2')}.tsnix-wordmark{font-family:'Quicksand','ui-rounded',system-ui,-apple-system,sans-serif;font-weight:600;font-size:100px}</style>
+    <linearGradient id="tsnix-gradient" gradientUnits="userSpaceOnUse" x1="8" y1="0" x2="221.20000000000002" y2="0">
+      <stop offset="0" stop-color="#5BCEFA"/>
+      <stop offset="1" stop-color="#F5A9B8"/>
+    </linearGradient>
+  </defs>
+  <text class="tsnix-wordmark" x="6.40" y="78.30" fill="url(#tsnix-gradient)">tsnix</text>
+</svg>

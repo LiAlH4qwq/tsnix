@@ -9,8 +9,6 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
 
-    systems.url = "github:nix-systems/default";
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,17 +20,27 @@
     flake-parts.lib.mkFlake { inherit inputs; } (
       { config, withSystem, ... }:
       {
-        systems = import inputs.systems;
+        # Deliberately not `import inputs.systems` (nix-systems/default):
+        # nixpkgs 26.11 dropped x86_64-darwin support, so keeping it in the
+        # list would make `nix flake show --all-systems` / `flake check` fail.
+        systems = [
+          "aarch64-linux"
+          "x86_64-linux"
+          "aarch64-darwin"
+        ];
 
         imports = [
-          # Development tooling (git hooks, generated GitHub Actions) lives in
-          # the `dev` partition so it never reaches a consumer's lock file.
+          # Development tooling (docs, git hooks, generated GitHub Actions)
+          # lives in the `dev` partition so it never reaches a consumer's
+          # lock file.
           inputs.flake-parts.flakeModules.partitions
-          ./nix/docs.nix
           ./nix/wasm.nix
         ];
 
         partitionedAttrs = {
+          # `docs`/`rustdoc` and their mdBook theme input live in the dev
+          # partition; the root `packages` set is re-exported from there.
+          packages = "dev";
           devShells = "dev";
           apps = "dev";
           checks = "dev";

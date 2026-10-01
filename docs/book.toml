@@ -9,5 +9,8 @@ build-dir = "book"
 
 [output.html]
 site-url = "/tsnix/"
-default-theme = "rust"
-preferred-dark-theme = "coal"
+default-theme = "rose-pine-dawn"
+preferred-dark-theme = "ayu"
+additional-css = ["./theme/rose-pine-dawn.css"]
+git-repository-url = "https://github.com/LiAlH4qwq/tsnix"
+git-repository-icon = "fab-github"

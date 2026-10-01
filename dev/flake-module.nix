@@ -3,6 +3,7 @@
   imports = [
     inputs.github-actions-nix.flakeModules.default
     inputs.git-hooks.flakeModule
+    ../nix/docs.nix
     ../nix/github.nix
     ../nix/hooks.nix
   ];

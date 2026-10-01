@@ -1,6 +1,13 @@
 # tsnix
 
-A minimal, embeddable **Nix-language evaluator** built solely on
+<p align="center"><img src="docs/logo.svg" width="220" alt="tsnix logo"></p>
+
+> **Looking for an icon.** `tsnix` currently ships with a wordmark only; icon
+> designs are being solicited — share yours in the
+> [issue tracker](https://github.com/LiAlH4qwq/tsnix/issues).
+
+`tsnix` is short for **tiny snix-eval CLI**: a minimal, embeddable
+**Nix-language evaluator** built solely on
 [`snix-eval`](https://snix.dev). It contains **no Nix store**: it evaluates the
 Nix language and emits JSON/raw/Nix output, so you can generate configuration
 where the `nix` binary is unavailable or too heavy — for example an Android
