@@ -36,7 +36,7 @@ in
       # No local I/O and no REPL in this build.
       packages.wasm = rustPlatform.buildRustPackage {
         pname = "tsnix-wasm";
-        version = "0.1.0";
+        version = "0.2.0";
         inherit src;
         cargoLock = {
           lockFile = ../Cargo.lock;

@@ -198,3 +198,19 @@ docs/               bilingual mdBook sources (rose-pine-dawn mdBook theme)
 - Do not add I/O or store behaviour outside `src/eval.rs` and `src/stubs.rs`.
 - Priority is correctness > performance > readability > elegance. Prefer an
   accurate rejection over a convenient fabrication.
+
+### Versioning
+
+`tsnix` follows [Semantic Versioning](https://semver.org) (`MAJOR.MINOR.PATCH`).
+The version lives in `Cargo.toml` and is mirrored in `Cargo.lock`; keep both in
+sync.
+
+- `MAJOR`: breaking changes to the CLI contract, the embedding API, or the
+  `std`/`schema` surface.
+- `MINOR`: backwards-compatible additions (new subcommands, options, `std`
+  functions, features — e.g. adding `std` moved 0.1.0 to 0.2.0).
+- `PATCH`: backwards-compatible fixes and internal work.
+
+Bump the version in the same commit that changes the main program: any change
+to `src/` (or the CLI contract it implements) is a release and must update the
+version. Docs-, tests- and packaging-only changes do not require a bump.
