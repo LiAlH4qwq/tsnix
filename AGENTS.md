@@ -188,16 +188,43 @@ dev/                dev-only inputs + modules (docs theme, git hooks, GitHub
                     Actions generation); docs/`rustdoc` are built from the
                     `dev` partition, so `nix build .#docs` still works
 docs/               bilingual mdBook sources (rose-pine-dawn mdBook theme)
+.github/scripts/    CI helpers (update-snix.sh, used by the weekly bump)
 ```
 
 ### Constraints
 
 - **License is GPL-3.0-only** (inherited from `snix-eval`). Keep it that way.
 - The `snix-eval` git revision is pinned in `Cargo.toml`; changing it requires
-  updating `Cargo.lock` and the flake's `outputHashes`.
+  updating `Cargo.lock` and `nix/constants.nix` (`snixSourceHash`). The
+  `outputHashes` keys are derived from `Cargo.lock`, so they need no editing.
 - Do not add I/O or store behaviour outside `src/eval.rs` and `src/stubs.rs`.
 - Priority is correctness > performance > readability > elegance. Prefer an
   accurate rejection over a convenient fabrication.
+
+## Releases and automation
+
+- **Weekly snix-eval bump.** `.github/workflows/update-snix.yml` (generated from
+  `nix/github.nix`) runs Mondays 06:00 UTC. It follows the tip of the default
+  branch (`canon`) of `https://git.snix.dev/snix/snix.git`, rewrites
+  `Cargo.toml` + `Cargo.lock`, refreshes `snixSourceHash` in
+  `nix/constants.nix`, self-tests with `nix build .#tsnix`, then opens/updates
+  the `snix/update` PR via `.github/scripts/update-snix.sh`. Trigger it manually
+  with `gh workflow run update-snix.yml`.
+- Configure the repo secret `SNIX_UPDATE_TOKEN` (fine-grained PAT with
+  *contents: write* and *pull requests: write*) so the bot PR triggers CI.
+  Without it the fallback `github.token` still opens the PR, but GitHub
+  suppresses `pull_request` runs for it; the workflow's own `nix build` still
+  tests the bump.
+- **Android / Termux.** `packages.<system>.android` and `packages.<system>.termux`
+  are the fully static musl build (`.#static`): self-contained, no Termux prefix,
+  runnable from a normal Android root shell (Magisk/KernelSU) and inside Termux.
+- **Releases.** Pushing a `v*` tag runs `.github/workflows/release.yml`, which
+  builds static musl `android` binaries (x86_64 + aarch64) plus `aarch64-darwin`
+  and attaches them to the GitHub release.
+- **Not publishable to crates.io.** `snix-eval` is a git-only dependency (the
+  crates.io `snix-eval` is an empty `0.0.0-pre` placeholder), and Cargo refuses
+  to package git dependencies for any registry. Distribute via GitHub Releases
+  or `nix build .#android` instead.
 
 ### Versioning
 

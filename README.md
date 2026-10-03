@@ -68,11 +68,19 @@ $ ./target/release/tsnix --help
 ```console
 $ nix build                 # host binary
 $ nix build .#static        # static musl binary for embedded targets
+$ nix build .#android       # static musl build for Android root shells
+$ nix build .#termux        # the same binary, for Termux
 $ nix build .#docs          # bilingual documentation site (mdBook)
 $ nix build .#wasm          # wasm32-wasip1 build (experimental)
 $ nix run . -- eval -e '1 + 1'
 $ nix develop               # dev shell with the pinned toolchain, hooks and mdBook
 ```
+
+Prebuilt binaries for `v*` tags are attached to
+[GitHub Releases](https://github.com/LiAlH4qwq/tsnix/releases): static musl
+builds for `x86_64` and `aarch64` (Android/Termux; no Termux prefix needed) plus
+`aarch64-darwin`. `tsnix` is **not** published to crates.io — `snix-eval` is a
+git-only dependency and Cargo cannot package those for a registry.
 
 ## Usage
 
@@ -233,7 +241,10 @@ See [docs/architecture.md](docs/architecture.md) for the design.
 - The release profile uses `lto = "fat"`, `codegen-units = 1`, `opt-level = "s"`
   and `strip`.
 
-Static musl builds are produced by the flake (`packages.<system>.static`).
+Static musl builds are produced by the flake (`packages.<system>.static`, also
+exposed as `.#android` and `.#termux`). They are self-contained (no dynamic
+loader, no Termux prefix) and run from a normal Android root shell as well as
+inside Termux.
 
 ## Testing
 

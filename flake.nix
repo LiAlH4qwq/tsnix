@@ -68,16 +68,25 @@
             inherit (import ./nix/constants.nix) snixSourceHash;
 
             tsnix = pkgs.callPackage ./nix/package.nix { inherit snixSourceHash; };
+
+            # Fully static musl build: no dynamic loader, no Termux prefix.
+            # Runnable from a normal Android root shell (Magisk/KernelSU) and
+            # from Termux, as well as any Linux. Static for embedded targets.
+            tsnixStatic = pkgs.pkgsStatic.callPackage ./nix/package.nix {
+              inherit snixSourceHash;
+            };
           in
           {
             _module.args.pkgs = pkgs;
 
             packages.tsnix = tsnix;
             packages.default = config.packages.tsnix;
-            # Static musl build for embedded targets.
-            packages.static = pkgs.pkgsStatic.callPackage ./nix/package.nix {
-              inherit snixSourceHash;
-            };
+            packages.static = tsnixStatic;
+            # Android/Termux targets. Both are the same self-contained static
+            # binary; `android` is named for a plain root shell, `termux` for
+            # the Termux prefix. Neither needs the Android NDK or Bionic.
+            packages.android = tsnixStatic;
+            packages.termux = tsnixStatic;
 
             apps.default = {
               type = "app";

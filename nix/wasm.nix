@@ -4,6 +4,19 @@
 }:
 let
   constants = import ./constants.nix;
+
+  # See nix/package.nix: keep the `outputHashes` keys in sync with Cargo.lock.
+  lock = builtins.fromTOML (builtins.readFile ../Cargo.lock);
+  outputHashFor =
+    name:
+    let
+      pkg = lib.findFirst (
+        p: p.name == name
+      ) (throw "nix/wasm.nix: ${name} is not in Cargo.lock") lock.package;
+    in
+    {
+      "${pkg.name}-${pkg.version}" = constants.snixSourceHash;
+    };
 in
 {
   perSystem =
@@ -40,10 +53,7 @@ in
         inherit src;
         cargoLock = {
           lockFile = ../Cargo.lock;
-          outputHashes = {
-            "snix-eval-0.1.0" = constants.snixSourceHash;
-            "snix-eval-builtin-macros-0.0.1" = constants.snixSourceHash;
-          };
+          outputHashes = outputHashFor "snix-eval" // outputHashFor "snix-eval-builtin-macros";
         };
         cargoBuildFlags = [
           "--target"

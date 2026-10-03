@@ -64,11 +64,19 @@ $ ./target/release/tsnix --help
 ```console
 $ nix build                 # 本机二进制
 $ nix build .#static        # 面向嵌入式目标的静态 musl 二进制
+$ nix build .#android       # 面向 Android root shell 的静态 musl 构建
+$ nix build .#termux        # 同一二进制，供 Termux 使用
 $ nix build .#docs          # 中英双语文档站（mdBook）
 $ nix build .#wasm          # wasm32-wasip1 构建（实验性）
 $ nix run . -- eval -e '1 + 1'
 $ nix develop               # 带工具链、git hooks 与 mdBook 的开发 shell
 ```
+
+`v*` 标签的预编译二进制会附加到
+[GitHub Releases](https://github.com/LiAlH4qwq/tsnix/releases)：`x86_64` 与
+`aarch64` 的静态 musl 构建（Android/Termux，无需 Termux 前缀），以及
+`aarch64-darwin`。`tsnix` **不会**发布到 crates.io——`snix-eval` 是 git 依赖，
+Cargo 无法将其打包发布到任何 registry。
 
 ## 用法
 
@@ -223,7 +231,9 @@ println!("{}", output.text);
 - release profile 使用 `lto = "fat"`、`codegen-units = 1`、`opt-level = "s"`、
   `strip`。
 
-静态 musl 构建由 flake 提供（`packages.<system>.static`）。
+静态 musl 构建由 flake 提供（`packages.<system>.static`，同时作为 `.#android`
+和 `.#termux` 暴露）。它们自包含（无动态加载器、无 Termux 前缀），既可在普通
+Android root shell 中运行，也可在 Termux 中运行。
 
 ## 测试
 
