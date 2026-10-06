@@ -844,7 +844,7 @@ dependencies = [
 [[package]]
 name = "snix-eval"
 version = "0.1.0"
-source = "git+https://git.snix.dev/snix/snix.git?rev=8fa52da9f8e8ae70f31d565855fb73da7388df51#8fa52da9f8e8ae70f31d565855fb73da7388df51"
+source = "git+https://git.snix.dev/snix/snix.git?rev=1a4727d22fbff5d7d99c7cf76f0f3d1c4be045b3#1a4727d22fbff5d7d99c7cf76f0f3d1c4be045b3"
 dependencies = [
  "bstr",
  "bytes",
@@ -877,7 +877,7 @@ dependencies = [
 [[package]]
 name = "snix-eval-builtin-macros"
 version = "0.0.1"
-source = "git+https://git.snix.dev/snix/snix.git?rev=8fa52da9f8e8ae70f31d565855fb73da7388df51#8fa52da9f8e8ae70f31d565855fb73da7388df51"
+source = "git+https://git.snix.dev/snix/snix.git?rev=1a4727d22fbff5d7d99c7cf76f0f3d1c4be045b3#1a4727d22fbff5d7d99c7cf76f0f3d1c4be045b3"
 dependencies = [
  "proc-macro2",
  "quote",
