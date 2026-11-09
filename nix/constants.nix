@@ -5,5 +5,5 @@
   #
   # To refresh after bumping the revision in Cargo.toml:
   #   nix build .#tsnix 2>&1 | grep 'got:'
-  snixSourceHash = "sha256-5vjUm3KUaciznlUYSKFhgjyzG1ZNTArKREA0OyPdu4Q=";
+  snixSourceHash = "sha256-g+vTBIPRkTkwffkud6vw7h5OG1Y2uoDacIO6+S32qtI=";
 }
